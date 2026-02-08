@@ -1,42 +1,51 @@
 <?php
 /**
- * AI 植物醫生 v12.0 - 備援保險版
+ * AI 植物醫生 v15.0 - 終極穩定精簡版
+ * 功能：自動切換模型、極簡回覆、防休眠相容
  */
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
 
+// --- 設定區 ---
 $access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU='; 
-$api_key = "AIzaSyAWdeWRm6RvqcsgKsrD17sk1K1P6Es9bvA"; 
+$api_key = "AIzaSyAWdeWRm6RvqcsgKsrD17sk1K1P6Es9bvA"; // 請貼入你剛才測試成功的金鑰
 
+// 1. 接收 LINE 訊息
 $content = file_get_contents('php://input');
 $events = json_decode($content, true);
 
 if (!empty($events['events'])) {
     foreach ($events['events'] as $event) {
+        // 只處理圖片訊息
         if ($event['type'] == 'message' && $event['message']['type'] == 'image') {
             $replyToken = $event['replyToken'];
             $messageId = $event['message']['id'];
 
-            // 1. 下載圖片
-            $url = 'https://api-data.line.me/v2/bot/message/' . $messageId . '/content';
-            $ch = curl_init($url);
+            // 2. 下載 LINE 圖片資料
+            $img_url = 'https://api-data.line.me/v2/bot/message/' . $messageId . '/content';
+            $ch = curl_init($img_url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $access_token]);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $imgData = curl_exec($ch);
             curl_close($ch);
 
-            // 2. 定義要嘗試的模型順序 (按你的清單排序)
-            $models_to_try = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
-            $finalText = "";
+            // 3. 設定極簡指令 (Prompt)
+            $prompt = "你是一位植醫。請嚴格依格式回覆，禁廢話：\n🪴名稱：[中文名]\n🩺診斷：[一句話]\n💊處方：[條列2點動作]\n💧澆水：[一句話]";
 
-            foreach ($models_to_try as $model) {
+            // 4. 定義嘗試模型順序 (依據你帳號的診斷結果)
+            $models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest'];
+            $replyText = "⚠️ 暫時無法辨識，請稍後再試。";
+
+            foreach ($models as $model) {
                 $api_url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=" . $api_key;
                 
                 $payload = [
                     "contents" => [["parts" => [
-                        ["text" => "你是一位資深植物專家。第一行請寫出植物名，之後給予繁體中文的照顧建議。"],
+                        ["text" => $prompt],
                         ["inline_data" => ["mime_type" => "image/jpeg", "data" => base64_encode($imgData)]]
-                    ]]]
+                    ]]],
+                    "generationConfig" => [
+                        "maxOutputTokens" => 150,
+                        "temperature" => 0.1
+                    ]
                 ];
 
                 $ch = curl_init($api_url);
@@ -44,22 +53,21 @@ if (!empty($events['events'])) {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                $response = curl_exec($ch);
-                $res_arr = json_decode($response, true);
+                $res = curl_exec($ch);
+                $res_arr = json_decode($res, true);
                 curl_close($ch);
 
+                // 如果成功抓到文字就跳出循環
                 if (isset($res_arr['candidates'][0]['content']['parts'][0]['text'])) {
-                    $finalText = $res_arr['candidates'][0]['content']['parts'][0]['text'];
-                    break; // 成功了就跳出循環
-                } else {
-                    $finalText = "❌ 嘗試 $model 失敗: " . ($res_arr['error']['message'] ?? '未知錯誤');
+                    $replyText = $res_arr['candidates'][0]['content']['parts'][0]['text'];
+                    break;
                 }
             }
 
-            // 3. 回傳給 LINE
+            // 5. 回傳給 LINE 使用者
             $post_data = [
                 'replyToken' => $replyToken,
-                'messages' => [['type' => 'text', 'text' => $finalText]]
+                'messages' => [['type' => 'text', 'text' => trim($replyText)]]
             ];
             $ch = curl_init('https://api.line.me/v2/bot/message/reply');
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: Bearer ' . $access_token]);
@@ -68,4 +76,8 @@ if (!empty($events['events'])) {
             curl_close($ch);
         }
     }
+} else {
+    // 讓 Cron-job 探測時回傳 200 OK
+    http_response_code(200);
+    echo "Plant Doctor is Online.";
 }
