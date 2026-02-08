@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 
 $access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU='; 
 // 請確保這是你在「新專案」產生的新 Key
-$api_key = "AIzaSyA7xcFM_WHk2TXqWc4sC9YWs0MIbLZ2UKE"; 
+$api_key = "AIzaSyCmuifzTMFWD7jUK5tClL6Z0UfaDwwadF4"; 
 
 $content = file_get_contents('php://input');
 $events = json_decode($content, true);
