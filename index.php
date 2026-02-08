@@ -67,5 +67,5 @@ if (!empty($events['events'])) {
         }
     }
 } else {
-    echo "Bot Status: Ready";
+    echo "Bot Status:fffff Ready";
 }
