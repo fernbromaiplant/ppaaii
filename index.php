@@ -1,12 +1,13 @@
 <?php
 /**
- * AI 植物醫生 v8.0 - 終極路徑修復版
+ * AI 植物醫生 v9.0 - 自動路徑修復版
  */
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 $access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU='; 
-$api_key = "AIzaSyAZzK4ZeEAia05oWt5l-5ummv0u8UC55CY"; 
+// *** 請在這裡貼上你剛剛 Copy 的那把最新 API Key ***
+$api_key = "AIzaSyAWdeWRm6RvqcsgKsrD17sk1K1P6Es9bvA"; 
 
 $content = file_get_contents('php://input');
 $events = json_decode($content, true);
@@ -17,7 +18,7 @@ if (!empty($events['events'])) {
             $replyToken = $event['replyToken'];
             $messageId = $event['message']['id'];
 
-            // 1. 下載圖片
+            // 1. 下載 LINE 圖片
             $url = 'https://api-data.line.me/v2/bot/message/' . $messageId . '/content';
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $access_token]);
@@ -25,14 +26,12 @@ if (!empty($events['events'])) {
             $imgData = curl_exec($ch);
             curl_close($ch);
 
-            // 2. 呼叫 Gemini API - 換成 v1 與 latest 路徑
-            $api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=" . $api_key;
+            // 2. 呼叫 Gemini - 嘗試 v1beta (這是目前對 Flash 最穩的路徑)
+            $api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $api_key;
             
-            $prompt = "你是一位資深植物病理學家。第一行請直接寫出植物名，之後請針對健康狀況與處方給予簡短建議（請使用繁體中文）。";
-
             $payload = [
                 "contents" => [["parts" => [
-                    ["text" => $prompt],
+                    ["text" => "你是一位植物專家。請用繁體中文告訴我這是什麼植物，以及如何照顧牠。"],
                     ["inline_data" => ["mime_type" => "image/jpeg", "data" => base64_encode($imgData)]]
                 ]]]
             ];
@@ -46,13 +45,16 @@ if (!empty($events['events'])) {
             $res_arr = json_decode($response, true);
             curl_close($ch);
             
+            // 3. 判斷回傳結果
             if (isset($res_arr['candidates'][0]['content']['parts'][0]['text'])) {
                 $replyText = $res_arr['candidates'][0]['content']['parts'][0]['text'];
             } else {
-                $msg = $res_arr['error']['message'] ?? '解析失敗';
-                $replyText = "⚠️ 診斷回報：$msg\n\n(若持續出現 NOT_FOUND，請確認 Google AI Studio 左上角是否切換到了 Pay-as-you-go 或確認 API Key 是否在正確的 Project 下)";
+                // 如果還是失敗，把錯誤碼噴出來，我們直接看看到底是哪邊不對
+                $error_msg = $res_arr['error']['message'] ?? '未知錯誤';
+                $replyText = "⚠️ 呼叫失敗：\n$error_msg\n\n請確認此 Key 是否已在 AI Studio 啟用。";
             }
 
+            // 4. 回傳給 LINE
             $post_data = [
                 'replyToken' => $replyToken,
                 'messages' => [['type' => 'text', 'text' => $replyText]]
@@ -65,5 +67,5 @@ if (!empty($events['events'])) {
         }
     }
 } else {
-    echo "Server Status: Running (v8.0)";
+    echo "Bot is running. Waiting for images...";
 }
