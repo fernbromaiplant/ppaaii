@@ -6,7 +6,7 @@
 
 // --- 基礎設定 ---
 $access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU='; 
-$api_key = "AIzaSyAWdeWRm6RvqcsgKsrD17sk1K1P6Es9bvA"; 
+$api_key = "AIzaSyC3oMjlNuDmtMgnS5STmhjnOnIS_aDp1YQ"; 
 
 $content = file_get_contents('php://input');
 $events = json_decode($content, true);
