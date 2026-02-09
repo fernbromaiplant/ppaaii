@@ -41,4 +41,43 @@ if (!empty($events['events'])) {
                 ]]],
                 "generationConfig" => [
                     "maxOutputTokens" => 800,
-                    "temperature" => 0.
+                    "temperature" => 0.7
+                ]
+            ];
+
+            // 3. 呼叫 Gemini API
+            $ch = curl_init($api_url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $res = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $res_arr = json_decode($res, true);
+            curl_close($ch);
+
+            // 4. 解析 AI 回應
+            $replyText = "";
+            if ($http_code == 200 && isset($res_arr['candidates'][0]['content']['parts'][0]['text'])) {
+                $replyText = $res_arr['candidates'][0]['content']['parts'][0]['text'];
+            } else {
+                $error_detail = $res_arr['error']['message'] ?? '連線逾時或模型維護中';
+                $replyText = "❌ 診斷失敗 (HTTP $http_code)\n原因：$error_detail\n💡 建議：請確認 Render 後台 GEMINI_API_KEY 是否填寫正確。";
+            }
+
+            // 5. 回傳結果給 LINE 使用者
+            $finalMessage = trim($replyText) . "\n\n🌿 更多資訊請見【蕨積】：\nhttps://fernbrom.byethost24.com";
+
+            $post_data = [
+                'replyToken' => $replyToken,
+                'messages' => [['type' => 'text', 'text' => $finalMessage]]
+            ];
+            
+            $ch = curl_init('https://api.line.me/v2/bot/message/reply');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: Bearer ' . $access_token]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));
+            curl_exec($ch);
+            curl_close($ch);
+        }
+    }
+}
