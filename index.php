@@ -1,9 +1,20 @@
-<?php
-/**
- * AI 植物醫生 v20.0 - 安全環境變數版
- */
+// 改用更精確的模型名稱
+            $models = [
+                'gemini-1.5-flash-002', 
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-8b-001'
+            ];
+            $replyText = "";
+            $last_error = "";
 
-// 1. 從系統環境變數讀取金鑰 (不要寫死在代碼裡！)
+            if (!$api_key) {
+                $replyText = "❌ 系統錯誤：未設定環境變數 GEMINI_API_KEY。";
+            } else {
+                foreach ($models as $model) {
+                    // 注意：這裡的 URL 保持 v1beta
+                    $api_url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=" . $api_key;
+                    
+                    // ... 其餘 curl 邏輯不變 ...
 $access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU='; 
 $api_key = getenv('GEMINI_API_KEY'); 
 
