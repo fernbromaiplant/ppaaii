@@ -23,21 +23,23 @@ if (!empty($events['events'])) {
             $imgData = curl_exec($ch);
             curl_close($ch);
 
-            // 2. 提示詞
-            $prompt = "你是一位專業植物醫生。請依格式回覆：\n🪴 植物名稱：[中文名]\n🩺 健康診斷：[說明現況]\n💊 照護建議：[具體行動]\n💧 澆水指南：[頻率]";
+            // ... (前面下載圖片的代碼不變)
 
-            // 3. 使用 Google 2026 最穩定的模型別名與 v1 正式版 URL
-            // 改用 -latest 可以讓 Google 自動幫你對接到目前可用的版本，避免 404
-            $api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=" . $api_key;
-            
-            $payload = [
-                "contents" => [["parts" => [
-                    ["text" => $prompt],
-                    ["inline_data" => ["mime_type" => "image/jpeg", "data" => base64_encode($imgData)]]
-                ]]],
-                "generationConfig" => ["maxOutputTokens" => 500, "temperature" => 0.5]
-            ];
+// 2. 提示詞
+$prompt = "你是一位專業植物醫生。請依格式回覆：\n🪴 植物名稱：[中文名]\n🩺 健康診斷：[說明現況]\n💊 照護建議：[具體行動]\n💧 澆水指南：[頻率]";
 
+// 3. 【重要修正】改用 2.0 版本路徑與模型名稱
+$api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $api_key;
+
+$payload = [
+    "contents" => [["parts" => [
+        ["text" => $prompt],
+        ["inline_data" => ["mime_type" => "image/jpeg", "data" => base64_encode($imgData)]]
+    ]]],
+    "generationConfig" => ["maxOutputTokens" => 800, "temperature" => 0.7]
+];
+
+// ... (後面的 curl 送出與解析代碼不變)
             $ch = curl_init($api_url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
