@@ -7,7 +7,7 @@
  */
 
 // --- 設定區 ---
-$access_token = 'zBjmdLPs6hhz0JKcrGTjfRTWBTYSSVxeR8YTHJFGatPDfuNu4i/9GwQ5YL3hFQWm9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw7ycJ103VqtpEVEBw1RL4xkbdT+lyTStxBhEbix/k+FQwdB04t89/1O/w1cDnyilFU=';
+$access_token = 'Fkl3e1u1smWN7MSqd6kVn/1J3H/6zVyNnFadGTjkbJt6yHRfNP1HbvFatK/K7o7S9gN3EorIBc78X5tFpsg467e2Wh9Zy2Nx14DEgeUnEw5lrjIGu+ZQwCWGnartaMj2n1Sh12sKUBukN7nSb4FhhQdB04t89/1O/w1cDnyilFU=';
 $api_key = getenv('GEMINI_API_KEY'); 
 
 // --- 接收 LINE 訊息 ---
